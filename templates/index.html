@@ -119,4 +119,11 @@
     socket.on('answer', function(answer) {
         // Handle answer from receiver if needed
     });
+
+    // Create audio element for playing received audio
+    var receivedAudioElement = document.createElement('audio');
+    receivedAudioElement.id = 'receivedAudioPlayer';
+    document.body.appendChild(receivedAudioElement);
 </script>
+</body>
+</html>

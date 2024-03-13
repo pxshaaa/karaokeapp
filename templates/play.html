@@ -30,10 +30,15 @@
     <button id="startStreamButton">Start Microphone Stream</button>
     <button id="stopStreamButton" disabled>Stop Microphone Stream</button>
 
+    <!-- Received audio playback -->
+    <h2>Received Audio</h2>
+    <audio id="receivedAudioPlayer" controls></audio>
+
     <script src="https://cdn.socket.io/socket.io-3.0.4.min.js"></script>
     <script>
         var socket = io.connect();
         var stream;
+        var audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
         // Function to start microphone streaming
         function startStreaming() {
@@ -52,6 +57,14 @@
 
                 mediaRecorder.onstop = function() {
                     var audioBlob = new Blob(audioChunks, { type: 'audio/ogg' });
+                    //console.log(typeof audioBlob)
+                    //var audioElement = document.getElementById('receivedAudioPlayer');
+                    //var audioURL = URL.createObjectURL(audioBlob);
+                    //audioElement.src = audioURL;
+                    //audioElement.play();
+
+
+
                     socket.emit('offer', audioBlob);
                 };
 
@@ -106,28 +119,15 @@
         // Event listener for the Stop Microphone Stream button
         document.getElementById('stopStreamButton').addEventListener('click', stopStreaming);
 
-        socket.on('answer', function(answer) {
-            // Handle answer from receiver if needed
-        });
-
-        // Function to handle sending SDP offers
-        function sendOffer(offer) {
-            socket.emit('offer', offer); // Send the offer to the signaling server
-        }
-
-        // Function to handle sending SDP answers
-        function sendAnswer(answer) {
-            socket.emit('answer', answer); // Send the answer to the signaling server
-        }
-
-        // Event listener to handle receiving SDP offers from the signaling server
-        socket.on('offer', function(offer) {
-            // Handle incoming offer, e.g., set as remote description
-        });
-
-        // Event listener to handle receiving SDP answers from the signaling server
-        socket.on('answer', function(answer) {
-            // Handle incoming answer, e.g., set as remote description
+        // Event listener for receiving audio stream from sender
+        socket.on('offer', function(audioBlob) {
+            console.log("ich bin offer");
+            console.log(typeof audioBlob)
+            var finalBlob = new Blob([audioBlob], { type: 'audio/ogg' });
+            var audioElement = document.getElementById('receivedAudioPlayer');
+            var audioURL = URL.createObjectURL(finalBlob);
+            audioElement.src = audioURL;
+            audioElement.play(); // Start playing the received audio
         });
     </script>
 </body>

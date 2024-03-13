@@ -109,6 +109,26 @@
         socket.on('answer', function(answer) {
             // Handle answer from receiver if needed
         });
+
+        // Function to handle sending SDP offers
+        function sendOffer(offer) {
+            socket.emit('offer', offer); // Send the offer to the signaling server
+        }
+
+        // Function to handle sending SDP answers
+        function sendAnswer(answer) {
+            socket.emit('answer', answer); // Send the answer to the signaling server
+        }
+
+        // Event listener to handle receiving SDP offers from the signaling server
+        socket.on('offer', function(offer) {
+            // Handle incoming offer, e.g., set as remote description
+        });
+
+        // Event listener to handle receiving SDP answers from the signaling server
+        socket.on('answer', function(answer) {
+            // Handle incoming answer, e.g., set as remote description
+        });
     </script>
 </body>
 </html>

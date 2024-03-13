@@ -4,9 +4,11 @@
     <title>Karaoke Night | Play Music</title>
     <!-- Add any necessary stylesheets or scripts here -->
     <style>
-        /* Hide the lyrics initially */
         #lyricsContainer {
             display: none;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
         }
     </style>
 </head>
@@ -24,7 +26,51 @@
         <pre id="lyricsContent"></pre>
     </div>
 
+    <!-- Start and stop streaming buttons -->
+    <button id="startStreamButton">Start Microphone Stream</button>
+    <button id="stopStreamButton" disabled>Stop Microphone Stream</button>
+
+    <script src="https://cdn.socket.io/socket.io-3.0.4.min.js"></script>
     <script>
+        var socket = io.connect();
+        var stream;
+
+        // Function to start microphone streaming
+        function startStreaming() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function(mediaStream) {
+                stream = mediaStream;
+                document.getElementById('startStreamButton').disabled = true;
+                document.getElementById('stopStreamButton').disabled = false;
+
+                var audioChunks = [];
+                var mediaRecorder = new MediaRecorder(mediaStream);
+
+                mediaRecorder.ondataavailable = function(event) {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = function() {
+                    var audioBlob = new Blob(audioChunks, { type: 'audio/ogg' });
+                    socket.emit('offer', audioBlob);
+                };
+
+                mediaRecorder.start();
+            })
+            .catch(function(err) {
+                console.log('The following getUserMedia error occurred: ' + err);
+            });
+        }
+
+        // Function to stop microphone streaming
+        function stopStreaming() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            document.getElementById('startStreamButton').disabled = false;
+            document.getElementById('stopStreamButton').disabled = true;
+        }
+
         document.getElementById('playButton').addEventListener('click', function() {
             var audioPlayer = document.getElementById('audioPlayer');
             if (audioPlayer.paused) {
@@ -53,6 +99,16 @@
 
         // Event listener for the Display Lyrics button
         document.getElementById('displayLyricsButton').addEventListener('click', displayLyrics);
+
+        // Event listener for the Start Microphone Stream button
+        document.getElementById('startStreamButton').addEventListener('click', startStreaming);
+
+        // Event listener for the Stop Microphone Stream button
+        document.getElementById('stopStreamButton').addEventListener('click', stopStreaming);
+
+        socket.on('answer', function(answer) {
+            // Handle answer from receiver if needed
+        });
     </script>
 </body>
 </html>

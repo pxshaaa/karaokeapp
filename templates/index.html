@@ -63,5 +63,60 @@
     <p>Copyright &copy; 2045 <a href="#">Company Name</a> All rights reserved | Design By: <a href="http://www.freewebsitetemplates.com/">freewebsitetemplates.com</a></p>
   </div>
 </div>
-</body>
-</html>
+
+<!-- JavaScript for microphone streaming -->
+<script src="https://cdn.socket.io/socket.io-3.0.4.min.js"></script>
+<script>
+    var socket = io.connect();
+
+    var startButton = document.createElement('button');
+    startButton.id = 'startButton';
+    startButton.innerText = 'Start Streaming';
+    document.body.appendChild(startButton);
+
+    var stopButton = document.createElement('button');
+    stopButton.id = 'stopButton';
+    stopButton.disabled = true;
+    stopButton.innerText = 'Stop Streaming';
+    document.body.appendChild(stopButton);
+
+    var stream;
+
+    startButton.onclick = function() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function(mediaStream) {
+            stream = mediaStream;
+            startButton.disabled = true;
+            stopButton.disabled = false;
+
+            var audioChunks = [];
+            var mediaRecorder = new MediaRecorder(mediaStream);
+
+            mediaRecorder.ondataavailable = function(event) {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = function() {
+                var audioBlob = new Blob(audioChunks, { type: 'audio/ogg' });
+                socket.emit('offer', audioBlob);
+            };
+
+            mediaRecorder.start();
+        })
+        .catch(function(err) {
+            console.log('The following getUserMedia error occurred: ' + err);
+        });
+    };
+
+    stopButton.onclick = function() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        startButton.disabled = false;
+        stopButton.disabled = true;
+    };
+
+    socket.on('answer', function(answer) {
+        // Handle answer from receiver if needed
+    });
+</script>

@@ -1,7 +1,10 @@
 from flask import Flask, render_template
-import os  # Import the os module
+from flask_socketio import SocketIO, emit
+import os
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
+socketio = SocketIO(app)
 
 @app.route('/')
 def index():
@@ -23,26 +26,19 @@ def rates():
 def play_music():
     return render_template('play.html')
 
+#@app.route('/lyrics/<song>')
+#def display_lyrics(song):
+#    lyrics_file_path = os.path.join(app.root_path, 'lyrics', f'{song}.txt')
+#    with open(lyrics_file_path, 'r') as file:
+#        lyrics = file.read()
+#    return render_template('lyrics.html', lyrics=lyrics)
+
 @app.route('/lyrics/<song>')
 def display_lyrics(song):
-    # Construct the path to the lyrics file
     lyrics_file_path = os.path.join(app.root_path, 'lyrics', f'{song}.txt')
-    
-    # Read the contents of the lyrics file
     with open(lyrics_file_path, 'r') as file:
         lyrics = file.read()
-    
-    # Render the HTML template with the lyrics
-    return render_template('lyrics.html', lyrics=lyrics)
-
-#@app.route('/songs')
-#def songs():
-#    # files from folder
-#    pass
-#
-#@app.route('/song/:song')
-#def song_site(song):
-#    return render_template("song.html", song)
+    return lyrics  # Return only the lyrics content without rendering a template
 
 @app.route('/blog')
 def blog():
@@ -64,5 +60,13 @@ def events():
 def drinks():
     return render_template('drinks.html')
 
+@socketio.on('offer')
+def handle_offer(offer):
+    emit('offer', offer, broadcast=True)
+
+@socketio.on('answer')
+def handle_answer(answer):
+    emit('answer', answer, broadcast=True)
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app, debug=True)

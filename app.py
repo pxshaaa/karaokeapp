@@ -59,6 +59,11 @@ def events():
 def drinks():
     return render_template('drinks.html')
 
+@socketio.on('audioChunk')
+def handle_audio_chunk(chunk):
+    logger.info('Received audio chunk')
+    emit('audioChunk', chunk, broadcast=True)
+
 @socketio.on('offer')
 def handle_offer(offer):
     logger.info('Received offer')

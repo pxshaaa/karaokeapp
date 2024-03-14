@@ -28,7 +28,6 @@
 
     <!-- Start and stop streaming buttons -->
     <button id="startStreamButton">Start Microphone Stream</button>
-    <button id="stopStreamButton" disabled>Stop Microphone Stream</button>
 
     <!-- Received audio playback -->
     <h2>Received Audio</h2>
@@ -38,16 +37,16 @@
     <script>
         var socket = io.connect();
         var stream;
-        var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        var audioContext;
 
-        // Function to start microphone streaming
-        function startStreaming() {
+        // Event listener for the Start Microphone Stream button
+        document.getElementById('startStreamButton').addEventListener('click', function() {
             navigator.mediaDevices.getUserMedia({ audio: true })
             .then(function(mediaStream) {
                 stream = mediaStream;
                 document.getElementById('startStreamButton').disabled = true;
-                document.getElementById('stopStreamButton').disabled = false;
 
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 var audioChunks = [];
                 var mediaRecorder = new MediaRecorder(mediaStream);
 
@@ -57,14 +56,6 @@
 
                 mediaRecorder.onstop = function() {
                     var audioBlob = new Blob(audioChunks, { type: 'audio/ogg' });
-                    //console.log(typeof audioBlob)
-                    //var audioElement = document.getElementById('receivedAudioPlayer');
-                    //var audioURL = URL.createObjectURL(audioBlob);
-                    //audioElement.src = audioURL;
-                    //audioElement.play();
-
-
-
                     socket.emit('offer', audioBlob);
                 };
 
@@ -73,26 +64,15 @@
             .catch(function(err) {
                 console.log('The following getUserMedia error occurred: ' + err);
             });
-        }
+        });
 
-        // Function to stop microphone streaming
-        function stopStreaming() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            document.getElementById('startStreamButton').disabled = false;
-            document.getElementById('stopStreamButton').disabled = true;
-        }
-
-        document.getElementById('playButton').addEventListener('click', function() {
-            var audioPlayer = document.getElementById('audioPlayer');
-            if (audioPlayer.paused) {
-                audioPlayer.play();
-                document.getElementById('playButton').textContent = 'Pause';
-            } else {
-                audioPlayer.pause();
-                document.getElementById('playButton').textContent = 'Play';
-            }
+        // Event listener for receiving audio stream from sender
+        socket.on('offer', function(audioBlob) {
+            var finalBlob = new Blob([audioBlob], { type: 'audio/ogg' });
+            var audioElement = document.getElementById('receivedAudioPlayer');
+            var audioURL = URL.createObjectURL(finalBlob);
+            audioElement.src = audioURL;
+            audioElement.play(); // Start playing the received audio
         });
 
         // Function to fetch and display lyrics
@@ -113,21 +93,16 @@
         // Event listener for the Display Lyrics button
         document.getElementById('displayLyricsButton').addEventListener('click', displayLyrics);
 
-        // Event listener for the Start Microphone Stream button
-        document.getElementById('startStreamButton').addEventListener('click', startStreaming);
-
-        // Event listener for the Stop Microphone Stream button
-        document.getElementById('stopStreamButton').addEventListener('click', stopStreaming);
-
-        // Event listener for receiving audio stream from sender
-        socket.on('offer', function(audioBlob) {
-            console.log("ich bin offer");
-            console.log(typeof audioBlob)
-            var finalBlob = new Blob([audioBlob], { type: 'audio/ogg' });
-            var audioElement = document.getElementById('receivedAudioPlayer');
-            var audioURL = URL.createObjectURL(finalBlob);
-            audioElement.src = audioURL;
-            audioElement.play(); // Start playing the received audio
+        // Function to play or pause the audio
+        document.getElementById('playButton').addEventListener('click', function() {
+            var audioPlayer = document.getElementById('audioPlayer');
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                document.getElementById('playButton').textContent = 'Pause';
+            } else {
+                audioPlayer.pause();
+                document.getElementById('playButton').textContent = 'Play';
+            }
         });
     </script>
 </body>
